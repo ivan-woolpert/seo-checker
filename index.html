@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Woolpert On-Page SEO Checker</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <div class="main-content">
+            <!-- Left Sidebar: Control Panel -->
+            <div class="sidebar">
+                <div class="sidebar-section">
+                    <h2>Woolpert On-Page SEO Checker</h2>
+                    
+                    <div class="input-group">
+                        <!-- <label for="page-url">Page URL</label> -->
+                        <div class="input-wrapper">
+                            <input type="text" id="page-url" placeholder="Page URL" value="">
+                            <button id="fetch-btn" class="fetch-button">Fetch Code</button>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        
+                        <input type="text" id="primary-keyword" placeholder="Primary Keyword" value="">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="source-code">Page Source Code (HTML)</label>
+                        <div class="code-container">
+                            <div class="code-search">
+                                <input type="text" id="search-input" placeholder="Search code..." />
+                                <div class="search-info">
+                                    <span id="search-results">0 results</span>
+                                    <button id="search-prev" class="search-nav">↑</button>
+                                    <button id="search-next" class="search-nav">↓</button>
+                                    <button id="search-close" class="search-close">×</button>
+                                </div>
+                            </div>
+                            <div class="code-editor">
+                                <div id="code-highlight" class="code-highlight"></div>
+                                <textarea id="source-code" placeholder="Page source code will appear here... or paste your own and click Analyze."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button id="analyze-btn" class="analyze-button">Analyze SEO</button>
+                </div>
+            </div>
+            
+            <!-- Main Content: Results Dashboard -->
+            <div class="results-dashboard">
+                <div class="score-section">
+                    <div class="score-circle" id="score-circle">
+                        <div class="score-value" id="score-value">--</div>
+                    </div>
+                    <div class="score-info">
+                        <h2>Overall SEO Score</h2>
+                        <p>Your page's on-page SEO health based on key best practices.</p>
+                    </div>
+                </div>
+                
+                <div class="categories-grid" id="categories-grid">
+                    <!-- Category cards will be dynamically generated here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>Copyright © Woolpert 2025.</p>
+        </footer>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html> 
