@@ -412,6 +412,12 @@ function analyzePageSEO(sourceCode, primaryKeyword, url = '') {
             }
         });
 
+        // Generate consolidated fix if there are failures
+        const hasFailures = categoryResult.checks.some(check => !check.passed);
+        if (hasFailures) {
+            categoryResult.consolidatedFix = generateConsolidatedFix(category.name, doc, keyword, url);
+        }
+
         results.categories.push(categoryResult);
     });
 
@@ -477,7 +483,10 @@ function checkCleanStructure(url) {
 function checkKeywordAtBeginning(doc, keyword) {
     const titleElement = doc.querySelector('title');
     if (!titleElement) {
-        return { passed: false, text: 'Primary keyword is not near the beginning.' };
+        return { 
+            passed: false, 
+            text: 'Primary keyword is not near the beginning.'
+        };
     }
     const title = titleElement.textContent.toLowerCase();
     const words = title.split(/\s+/);
@@ -492,9 +501,13 @@ function checkKeywordAtBeginning(doc, keyword) {
 function checkTitleUnder60Chars(doc) {
     const titleElement = doc.querySelector('title');
     if (!titleElement) {
-        return { passed: false, text: 'Title tag is over 60 characters.' };
+        return { 
+            passed: false, 
+            text: 'Title tag is over 60 characters.'
+        };
     }
-    const passed = titleElement.textContent.length <= 60;
+    const titleLength = titleElement.textContent.length;
+    const passed = titleLength <= 60;
     return {
         passed,
         text: passed ? 'Title tag is under 60 characters.' : 'Title tag is over 60 characters.'
@@ -554,12 +567,16 @@ function checkBrandNameInTitle(doc) {
 function checkUniqueDescription(doc) {
     const metaDesc = doc.querySelector('meta[name="description"]');
     if (!metaDesc || !metaDesc.getAttribute('content')) {
-        return { passed: false, text: 'Meta description is missing or generic.' };
+        return { 
+            passed: false, 
+            text: 'Meta description is missing or generic.'
+        };
     }
     const content = metaDesc.getAttribute('content').toLowerCase();
     const genericTerms = ['lorem ipsum', 'default description', 'add description', 'page description'];
     const isGeneric = genericTerms.some(term => content.includes(term));
     const passed = !isGeneric && content.length > 50;
+    
     return {
         passed,
         text: passed ? 'Meta description appears to be unique.' : 'Meta description is missing or generic.'
@@ -569,7 +586,10 @@ function checkUniqueDescription(doc) {
 function checkDescriptionUnder160Chars(doc) {
     const metaDesc = doc.querySelector('meta[name="description"]');
     if (!metaDesc) {
-        return { passed: false, text: 'Meta description is over 160 characters.' };
+        return { 
+            passed: false, 
+            text: 'Meta description is over 160 characters.'
+        };
     }
     const content = metaDesc.getAttribute('content') || '';
     const passed = content.length <= 160;
@@ -597,7 +617,10 @@ function checkAdCopyStyle(doc) {
 function checkKeywordInDescription(doc, keyword) {
     const metaDesc = doc.querySelector('meta[name="description"]');
     if (!metaDesc) {
-        return { passed: false, text: 'Meta description does not include the primary keyword.' };
+        return { 
+            passed: false, 
+            text: 'Meta description does not include the primary keyword.'
+        };
     }
     const content = metaDesc.getAttribute('content').toLowerCase();
     const passed = content.includes(keyword);
@@ -637,7 +660,10 @@ function checkOneUniqueH1(doc) {
 function checkH1HasKeyword(doc, keyword) {
     const h1Element = doc.querySelector('h1');
     if (!h1Element) {
-        return { passed: false, text: 'The <h1> tag does not contain the primary keyword.' };
+        return { 
+            passed: false, 
+            text: 'The <h1> tag does not contain the primary keyword.'
+        };
     }
     const h1Text = h1Element.textContent.toLowerCase();
     const passed = h1Text.includes(keyword);
@@ -1146,6 +1172,31 @@ function createCategoryCard(category) {
     card.appendChild(header);
     card.appendChild(checksList);
     
+    // Add consolidated recommendation if there are any failures
+    const hasFailures = category.checks.some(check => !check.passed);
+    
+    if (hasFailures && category.consolidatedFix) {
+        const recommendations = document.createElement('div');
+        recommendations.className = 'recommendations';
+        
+        const recItem = document.createElement('div');
+        recItem.className = 'recommendation-item recommendation-fix';
+        
+        const recLabel = document.createElement('div');
+        recLabel.className = 'recommendation-label';
+        recLabel.textContent = 'Recommended Fix';
+        
+        const recContent = document.createElement('div');
+        recContent.className = 'recommendation-content';
+        recContent.innerHTML = category.consolidatedFix;
+        
+        recItem.appendChild(recLabel);
+        recItem.appendChild(recContent);
+        recommendations.appendChild(recItem);
+        
+        card.appendChild(recommendations);
+    }
+    
     return card;
 }
 
@@ -1375,4 +1426,289 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// Generate meta description from page content
+function generateMetaDescription(doc) {
+    const h1 = doc.querySelector('h1');
+    const title = doc.querySelector('title');
+    const firstParagraph = doc.querySelector('p');
+    
+    let description = '';
+    
+    // Start with H1 or title
+    if (h1 && h1.textContent.trim()) {
+        description = h1.textContent.trim();
+    } else if (title && title.textContent.trim()) {
+        description = title.textContent.trim();
+    }
+    
+    // Add context from first paragraph
+    if (firstParagraph && firstParagraph.textContent.trim()) {
+        const paragraphText = firstParagraph.textContent.trim();
+        const firstSentence = paragraphText.split('.')[0];
+        if (firstSentence.length > 20 && firstSentence.length < 100) {
+            description += description ? '. ' + firstSentence : firstSentence;
+        }
+    }
+    
+    // Add call to action
+    const ctaWords = ['Learn', 'Discover', 'Get', 'Find', 'Start', 'Contact', 'Explore'];
+    const randomCta = ctaWords[Math.floor(Math.random() * ctaWords.length)];
+    
+    if (description.length < 120) {
+        description += `. ${randomCta} more today!`;
+    }
+    
+    // Ensure it's under 160 characters
+    if (description.length > 157) {
+        description = description.substring(0, 157) + '...';
+    }
+    
+    return description || 'Professional services and solutions. Contact us to learn more about our offerings.';
+}
+
+// Generate meta description with specific keyword
+function generateMetaDescriptionWithKeyword(doc, keyword) {
+    const h1 = doc.querySelector('h1');
+    const title = doc.querySelector('title');
+    const firstParagraph = doc.querySelector('p');
+    
+    let description = keyword.charAt(0).toUpperCase() + keyword.slice(1);
+    
+    // Add context from H1 or title
+    if (h1 && h1.textContent.trim()) {
+        const h1Text = h1.textContent.trim().replace(new RegExp(keyword, 'gi'), '').trim();
+        if (h1Text.length > 10) {
+            description += ' - ' + h1Text;
+        }
+    } else if (title && title.textContent.trim()) {
+        const titleText = title.textContent.trim().replace(new RegExp(keyword, 'gi'), '').trim();
+        if (titleText.length > 10) {
+            description += ' - ' + titleText;
+        }
+    }
+    
+    // Add context from first paragraph if space allows
+    if (description.length < 100 && firstParagraph && firstParagraph.textContent.trim()) {
+        const paragraphText = firstParagraph.textContent.trim();
+        const firstSentence = paragraphText.split('.')[0];
+        if (firstSentence.length > 20 && firstSentence.length < 80) {
+            description += '. ' + firstSentence;
+        }
+    }
+    
+    // Add call to action with keyword
+    if (description.length < 130) {
+        description += `. Get the best ${keyword} solutions today!`;
+    }
+    
+    // Ensure it's under 160 characters
+    if (description.length > 157) {
+        description = description.substring(0, 157) + '...';
+    }
+    
+    return description;
+}
+
+// Generate consolidated fix for each category
+function generateConsolidatedFix(categoryName, doc, keyword, url) {
+    const domain = url.replace(/^https?:\/\/([^\/]+).*/, '$1');
+    const brandName = domain?.split('.')[0]?.charAt(0).toUpperCase() + domain?.split('.')[0]?.slice(1) || 'Brand';
+    const keywordSlug = keyword.replace(/\s+/g, '-').toLowerCase();
+    
+    switch (categoryName) {
+        case 'SEO-Friendly URLs':
+            return `<div class="section-header">🎯 WHY IT MATTERS</div>
+SEO-friendly URLs signal your page's topic to users and search engines, improving relevance and trust.
+
+<div class="section-header">✅ BEST PRACTICES</div>
+<div class="bullet-point">• <strong>INCLUDE KEYWORD:</strong> Use <span class="good-example">.../${keywordSlug}</span> instead of <span class="bad-example">.../id-721</span></div>
+<div class="bullet-point">• <strong>BE DESCRIPTIVE:</strong> Use <span class="good-example">.../services/${keywordSlug}</span> instead of <span class="bad-example">.../post?id=45&cat=seo</span></div>
+<div class="bullet-point">• <strong>USE HYPHENS:</strong> Search engines read <span class="good-example">.../aerial-lidar</span> correctly vs <span class="bad-example">.../aerial_lidar</span></div>
+<div class="bullet-point">• <strong>USE HTTPS:</strong> Secure <span class="good-example">https://${domain}</span> builds trust vs <span class="bad-example">http://${domain}</span></div>
+<div class="bullet-point">• <strong>CLEAN STRUCTURE:</strong> Use lowercase paths without file extensions</div>
+
+<div class="section-header">📝 RECOMMENDED URL</div>
+<div class="code-example">https://${domain}/services/${keywordSlug}</div>`;
+
+        case 'Title Tag (<title>)':
+            return `<div class="section-header">🎯 WHY IT MATTERS</div>
+Title tags are your headline in search results and a critical ranking factor. They must grab attention and signal relevance.
+
+<div class="section-header">✅ BEST PRACTICES</div>
+<div class="bullet-point">• <strong>KEYWORD FIRST:</strong> Maximizes visibility and signals relevance immediately</div>
+<div class="bullet-point">• <strong>UNDER 60 CHARACTERS:</strong> Prevents truncation in search results</div>
+<div class="bullet-point">• <strong>NO KEYWORD STUFFING:</strong> Avoid repetitive keywords that look spammy</div>
+<div class="bullet-point">• <strong>BE COMPELLING:</strong> Act as a headline that encourages clicks</div>
+<div class="bullet-point">• <strong>INCLUDE BRAND:</strong> Build recognition with brand name at end</div>
+
+<div class="section-header">❌ AVOID</div>
+<div class="code-example bad-example">&lt;title&gt;${brandName} | Our ${keyword.charAt(0).toUpperCase() + keyword.slice(1)} Services&lt;/title&gt;</div>
+
+<div class="section-header">📝 RECOMMENDED TITLE</div>
+<div class="code-example">&lt;title&gt;${keyword.charAt(0).toUpperCase() + keyword.slice(1)} Solutions &amp; Engineering | ${brandName}&lt;/title&gt;</div>`;
+
+        case 'Meta Description':
+            return `<div class="section-header">🎯 WHY IT MATTERS</div>
+Meta descriptions are your ad copy in search results. They must be compelling to improve click-through rates and include your keyword.
+
+<div class="section-header">✅ BEST PRACTICES</div>
+<div class="bullet-point">• <strong>UNIQUE FOR EACH PAGE:</strong> Differentiate from other pages, avoid generic text</div>
+<div class="bullet-point">• <strong>UNDER 160 CHARACTERS:</strong> Prevents truncation in search results</div>
+<div class="bullet-point">• <strong>LIKE AD COPY:</strong> Write compelling, benefit-driven content</div>
+<div class="bullet-point">• <strong>INCLUDE KEYWORD:</strong> Gets bolded when users search for "${keyword}"</div>
+<div class="bullet-point">• <strong>CLEAR CTA:</strong> End with action words like "Learn more" or "Get started"</div>
+
+<div class="section-header">📝 RECOMMENDED META DESCRIPTION</div>
+<div class="code-example">&lt;meta name="description" content="Expert ${keyword} solutions by ${brandName}. Innovative approaches with proven results. Get your ${keyword} consultation today!"&gt;</div>`;
+
+        case 'Header Tags':
+            return `<div class="section-header">🎯 WHY IT MATTERS</div>
+Proper heading structure helps users scan content and tells search engines your page hierarchy and key topics.
+
+<div class="section-header">✅ BEST PRACTICES</div>
+<div class="bullet-point">• <strong>ONE H1 PER PAGE:</strong> Acts as the main headline, signals primary topic</div>
+<div class="bullet-point">• <strong>KEYWORD IN H1:</strong> Creates strong relevance signal vs generic headings</div>
+<div class="bullet-point">• <strong>LOGICAL HIERARCHY:</strong> Use H1 → H2 → H3, never skip levels</div>
+<div class="bullet-point">• <strong>DESCRIPTIVE SUBHEADINGS:</strong> Include related keywords vs generic text</div>
+<div class="bullet-point">• <strong>ACCESSIBILITY:</strong> Screen readers use headings for navigation</div>
+
+<div class="section-header">❌ AVOID</div>
+<div class="code-example bad-example">&lt;h1&gt;Welcome to Our Services&lt;/h1&gt;
+&lt;h2&gt;Our Process&lt;/h2&gt;</div>
+
+<div class="section-header">📝 RECOMMENDED STRUCTURE</div>
+<div class="code-example">&lt;h1&gt;${keyword.charAt(0).toUpperCase() + keyword.slice(1)} Solutions &amp; Services&lt;/h1&gt;
+&lt;h2&gt;Why Choose Our ${keyword.charAt(0).toUpperCase() + keyword.slice(1)} Expertise&lt;/h2&gt;
+&lt;h3&gt;Advanced ${keyword.charAt(0).toUpperCase() + keyword.slice(1)} Technologies&lt;/h3&gt;</div>`;
+
+        case 'Image Optimization':
+            return `<div class="section-header">🎯 WHY IT MATTERS</div>
+Optimized images improve page speed, accessibility, and provide additional SEO signals through filenames and alt text.
+
+<div class="section-header">✅ BEST PRACTICES</div>
+<div class="bullet-point">• <strong>OPTIMIZE FILE SIZE:</strong> Keep under 150KB for fast loading</div>
+<div class="bullet-point">• <strong>DESCRIPTIVE FILENAMES:</strong> Use keywords instead of generic names</div>
+<div class="bullet-point">• <strong>DESCRIPTIVE ALT TEXT:</strong> Help screen readers and provide SEO context</div>
+<div class="bullet-point">• <strong>UNDER 125 CHARACTERS:</strong> Screen readers stop around 125 chars</div>
+<div class="bullet-point">• <strong>NEXT-GEN FORMATS:</strong> WebP/AVIF for better compression than JPEG/PNG</div>
+
+<div class="section-header">❌ AVOID</div>
+<div class="code-example bad-example">&lt;img src="IMG_12345.jpg" alt="image"&gt;</div>
+
+<div class="section-header">📝 RECOMMENDED IMAGE TAG</div>
+<div class="code-example">&lt;img src="${keywordSlug}-services.webp" 
+     alt="${brandName} team providing ${keyword} solutions at work site" 
+     width="800" height="400" loading="lazy"&gt;</div>`;
+
+        case 'Keyword Placement':
+            return `<div class="section-header">🎯 WHY IT MATTERS</div>
+Strategic keyword placement signals relevance to search engines while maintaining natural, readable content for users.
+
+<div class="section-header">✅ BEST PRACTICES</div>
+<div class="bullet-point">• <strong>FIRST 100 WORDS:</strong> Include "${keyword}" early to confirm page topic</div>
+<div class="bullet-point">• <strong>IN H1 TAG:</strong> Creates the strongest relevance signal</div>
+<div class="bullet-point">• <strong>IN SUBHEADINGS:</strong> Use in H2/H3 tags with related terms</div>
+<div class="bullet-point">• <strong>NATURAL DENSITY:</strong> Target 1-2% keyword density naturally</div>
+<div class="bullet-point">• <strong>IN IMAGE ALT TEXT:</strong> Provides additional context signals</div>
+
+<div class="section-header">❌ AVOID KEYWORD STUFFING</div>
+<div class="code-example bad-example">Our ${keyword} services are the best ${keyword} services for all your ${keyword} needs</div>
+
+<div class="section-header">✅ NATURAL PLACEMENT</div>
+<div class="code-example">We provide premier ${keyword} services with proven expertise and innovative solutions</div>
+
+<div class="section-header">📝 TARGET LOCATIONS</div>
+<div class="bullet-point">• H1: ${keyword.charAt(0).toUpperCase() + keyword.slice(1)} Solutions</div>
+<div class="bullet-point">• First paragraph: Include naturally within 100 words</div>
+<div class="bullet-point">• Subheadings: Advanced ${keyword.charAt(0).toUpperCase() + keyword.slice(1)} Techniques</div>
+<div class="bullet-point">• Alt text: ${brandName} team performing ${keyword} analysis</div>`;
+
+        case 'Linking':
+            return `<div class="section-header">🎯 WHY IT MATTERS</div>
+Strategic linking guides users to related content, keeps them engaged longer, and signals topic relevance to search engines.
+
+<div class="section-header">✅ BEST PRACTICES</div>
+<div class="bullet-point">• <strong>INTERNAL LINKS:</strong> Connect related pages to improve user journey</div>
+<div class="bullet-point">• <strong>DESCRIPTIVE ANCHOR TEXT:</strong> Tell users and search engines what to expect</div>
+<div class="bullet-point">• <strong>EXTERNAL AUTHORITY:</strong> Link to trusted sources for credibility</div>
+<div class="bullet-point">• <strong>CONTEXTUAL PLACEMENT:</strong> Place naturally within content flow</div>
+<div class="bullet-point">• <strong>NO BROKEN LINKS:</strong> Test regularly to maintain user experience</div>
+
+<div class="section-header">❌ AVOID</div>
+<div class="code-example bad-example">For more information &lt;a href="/page"&gt;click here&lt;/a&gt;</div>
+
+<div class="section-header">📝 RECOMMENDED LINKING</div>
+<div class="code-example">Our process incorporates the latest &lt;a href="/services/${keywordSlug}"&gt;sustainable ${keyword} techniques&lt;/a&gt; following &lt;a href="https://authority-site.com"&gt;${keyword} industry standards&lt;/a&gt;.</div>
+
+<div class="section-header">💡 LINKING STRATEGY</div>
+<div class="bullet-point">• Internal: Link to relevant service pages and case studies</div>
+<div class="bullet-point">• External: Government standards, industry associations, research</div>
+<div class="bullet-point">• Anchor text: Include "${keyword}" or related terms naturally</div>`;
+
+        case 'Content':
+            return `<div class="section-header">🎯 WHY IT MATTERS</div>
+High-quality, comprehensive content establishes expertise, builds trust, and provides the depth search engines need to understand your authority.
+
+<div class="section-header">✅ BEST PRACTICES</div>
+<div class="bullet-point">• <strong>SUBSTANTIAL DEPTH:</strong> 1,500+ words that fully explore the topic</div>
+<div class="bullet-point">• <strong>AUTHOR BYLINE:</strong> Show expertise with credible author information</div>
+<div class="bullet-point">• <strong>DATA & INSIGHTS:</strong> Include specific statistics and original research</div>
+<div class="bullet-point">• <strong>SCANNABLE FORMAT:</strong> Use headings, bullets, short paragraphs</div>
+<div class="bullet-point">• <strong>RELEVANT MULTIMEDIA:</strong> Project photos, charts, videos vs stock images</div>
+
+<div class="section-header">💡 CONTENT STRUCTURE</div>
+<div class="code-example">1. Introduction with ${keyword} context (100-150 words)
+2. Main sections with H2 subheadings
+3. Case studies or examples
+4. Data and statistics  
+5. Conclusion with next steps</div>
+
+<div class="section-header">📝 AUTHOR CREDIBILITY</div>
+<div class="code-example">By John Smith, Lead ${keyword.charAt(0).toUpperCase() + keyword.slice(1)} Engineer at ${brandName}
+15+ years experience in ${keyword} solutions</div>
+
+<div class="section-header">📊 INCLUDE DATA EXAMPLES</div>
+<div class="bullet-point">• "Our analysis shows 30% cost reduction using this method"</div>
+<div class="bullet-point">• "Industry benchmarks indicate 85% success rate"</div>
+<div class="bullet-point">• "Case study: Project completed 20% under budget"</div>`;
+
+        default:
+            return `Follow SEO best practices for ${keyword} optimization with user-focused, high-quality content.`;
+    }
+}
+
+// Generate optimized meta description that addresses all meta description issues
+function generateOptimizedMetaDescription(doc, keyword) {
+    const h1 = doc.querySelector('h1');
+    const title = doc.querySelector('title');
+    
+    // Start with keyword
+    const capitalizedKeyword = keyword.charAt(0).toUpperCase() + keyword.slice(1);
+    let description = `${capitalizedKeyword} services`;
+    
+    // Add value proposition
+    description += ` - Professional solutions for your business needs`;
+    
+    // Add specific benefit or context from page if available
+    if (h1 && h1.textContent.trim()) {
+        const h1Text = h1.textContent.trim().replace(new RegExp(keyword, 'gi'), '').trim();
+        if (h1Text.length > 10 && h1Text.length < 50) {
+            description = `${capitalizedKeyword} ${h1Text.toLowerCase()}`;
+        }
+    }
+    
+    // Add compelling middle section
+    description += `. Expert ${keyword} solutions with proven results`;
+    
+    // Add strong CTA that includes keyword
+    description += `. Get your ${keyword} consultation today!`;
+    
+    // Ensure it's under 160 characters
+    if (description.length > 157) {
+        description = `${capitalizedKeyword} services - Expert solutions with proven results. Get your consultation today!`;
+    }
+    
+    return `<meta name="description" content="${description}">`;
 } 

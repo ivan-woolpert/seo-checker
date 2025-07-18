@@ -372,8 +372,8 @@ body {
 /* Categories Grid */
 .categories-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    grid-template-columns: 1fr;
+    gap: 16px;
 }
 
 .category-card {
@@ -382,6 +382,7 @@ body {
     border-radius: 12px;
     padding: 20px;
     transition: all 0.2s ease;
+    margin-bottom: 8px;
 }
 
 .category-card:hover {
@@ -449,6 +450,91 @@ body {
 
 .check-fail .check-text {
     color: #e2e8f0;
+}
+
+.recommendations {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #4a5568;
+}
+
+.recommendation-item {
+    margin-bottom: 12px;
+    padding: 12px;
+    background: #1a202c;
+    border-radius: 8px;
+    border-left: 4px solid #4299e1;
+}
+
+.recommendation-label {
+    font-weight: 600;
+    color: #4299e1;
+    font-size: 12px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+
+.recommendation-content {
+    color: #e2e8f0;
+    font-size: 13px;
+    line-height: 1.6;
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    white-space: pre-line;
+    word-break: break-word;
+    padding: 8px 0;
+}
+
+.recommendation-content .code-example {
+    background: #1a202c;
+    border: 1px solid #4a5568;
+    border-radius: 6px;
+    padding: 12px;
+    margin: 8px 0;
+    font-family: 'Fira Code', 'Courier New', monospace;
+    font-size: 12px;
+    overflow-x: auto;
+    color: #68d391;
+}
+
+.recommendation-content .section-header {
+    color: #4299e1;
+    font-weight: 600;
+    font-size: 14px;
+    margin: 12px 0 6px 0;
+}
+
+.recommendation-content .bullet-point {
+    margin: 6px 0;
+    padding-left: 4px;
+}
+
+.recommendation-content .good-example {
+    color: #68d391;
+}
+
+.recommendation-content .bad-example {
+    color: #fc8181;
+    border-left: 3px solid #fc8181;
+}
+
+.recommendation-content .good-example {
+    border-left: 3px solid #68d391;
+}
+
+.recommendation-success {
+    border-left-color: #38a169;
+}
+
+.recommendation-success .recommendation-label {
+    color: #38a169;
+}
+
+.recommendation-fix {
+    border-left-color: #ecc94b;
+}
+
+.recommendation-fix .recommendation-label {
+    color: #ecc94b;
 }
 
 /* Footer */
@@ -528,6 +614,7 @@ body {
     
     .categories-grid {
         grid-template-columns: 1fr;
+        gap: 12px;
     }
     
     .score-circle {
